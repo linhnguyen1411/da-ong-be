@@ -6,8 +6,8 @@ ruby "3.2.2"
 gem "rails", "~> 7.1.6"
 
 # Use mysql2 as the database for Active Record
-gem "mysql2", ">= 0.5"
-
+gem 'pg', '~> 1.4'
+gem 'dotenv-rails', '~> 3.0'
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"
 
