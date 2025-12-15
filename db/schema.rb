@@ -11,6 +11,9 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[7.1].define(version: 2025_12_13_094130) do
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "plpgsql"
+
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -49,7 +52,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_13_094130) do
   end
 
   create_table "best_sellers", force: :cascade do |t|
-    t.integer "menu_item_id", null: false
+    t.bigint "menu_item_id", null: false
     t.string "title"
     t.text "content"
     t.string "image_url"
@@ -63,8 +66,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_13_094130) do
   end
 
   create_table "booking_items", force: :cascade do |t|
-    t.integer "booking_id", null: false
-    t.integer "menu_item_id", null: false
+    t.bigint "booking_id", null: false
+    t.bigint "menu_item_id", null: false
     t.integer "quantity"
     t.text "notes"
     t.datetime "created_at", null: false
@@ -74,7 +77,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_13_094130) do
   end
 
   create_table "bookings", force: :cascade do |t|
-    t.integer "room_id", null: false
+    t.bigint "room_id", null: false
     t.string "customer_name"
     t.string "customer_phone"
     t.string "customer_email"
@@ -113,7 +116,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_13_094130) do
   end
 
   create_table "daily_specials", force: :cascade do |t|
-    t.integer "menu_item_id", null: false
+    t.bigint "menu_item_id", null: false
     t.string "title"
     t.text "content"
     t.string "image_url"
@@ -127,7 +130,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_13_094130) do
   end
 
   create_table "menu_items", force: :cascade do |t|
-    t.integer "category_id", null: false
+    t.bigint "category_id", null: false
     t.string "name"
     t.text "description"
     t.decimal "price"
@@ -140,7 +143,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_13_094130) do
   end
 
   create_table "room_images", force: :cascade do |t|
-    t.integer "room_id", null: false
+    t.bigint "room_id", null: false
     t.string "image_url"
     t.string "caption"
     t.integer "position"

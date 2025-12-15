@@ -1,23 +1,20 @@
-development:
-
 default: &default
-  adapter: mysql2
-  encoding: utf8mb4
+  adapter: postgresql
+  encoding: unicode
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  username: <%= ENV.fetch("MYSQL_USER") { "root" } %>
-  password: <%= ENV.fetch("MYSQL_PASSWORD") { "" } %>
-  host: <%= ENV.fetch("MYSQL_HOST") { "localhost" } %>
-  port: <%= ENV.fetch("MYSQL_PORT") { 3306 } %>
+  username: <%= ENV.fetch("DATABASE_USERNAME") { "postgres" } %>
+  password: <%= ENV.fetch("DATABASE_PASSWORD") { "postgres" } %>
+  host: <%= ENV.fetch("DATABASE_HOST") { "localhost" } %>
+  port: <%= ENV.fetch("DATABASE_PORT") { 5432 } %>
 
 development:
   <<: *default
-  database: daong_dev
+  database: daong_development
 
-
+test:
   <<: *default
   database: daong_test
 
 production:
   <<: *default
-  database: daong_prod
-production:
+  database: daong_production
