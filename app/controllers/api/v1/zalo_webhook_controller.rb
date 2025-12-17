@@ -1,7 +1,6 @@
 module Api
   module V1
     class ZaloWebhookController < ApplicationController
-      skip_before_action :verify_authenticity_token
 
       def message
         # Verify the request is from Zalo (you should implement signature verification)
