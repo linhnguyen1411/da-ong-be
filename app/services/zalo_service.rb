@@ -1,7 +1,7 @@
 require 'httparty'
 
 class ZaloService
-  ZALO_API_BASE = 'https://openapi.zalo.me/v2.0'
+  ZALO_API_BASE = 'https://openapi.zalo.me/v3.0'
 
   def self.get_access_token
     app_id = ENV['ZALO_APP_ID']
@@ -47,11 +47,14 @@ class ZaloService
 
     response = HTTParty.get("#{ZALO_API_BASE}/oa/getfollowers", headers: {
       'access_token' => access_token
+    }, query: {
+      data: { offset: 0, count: 50 }.to_json
     })
 
     if response.success?
-      followers = JSON.parse(response.body)['data'] || []
-      Rails.logger.info "Zalo followers retrieved: #{followers.count} followers"
+      data = JSON.parse(response.body)
+      followers = data['data'] || []
+      Rails.logger.info "Zalo followers retrieved: #{followers.count} followers - #{followers.inspect}"
       followers
     else
       Rails.logger.error "Failed to get Zalo followers: #{response.body}"
