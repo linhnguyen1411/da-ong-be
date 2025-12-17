@@ -43,9 +43,11 @@ class ZaloService
 
   def self.send_admin_notification(booking)
     admin_user_id = ENV['ZALO_ADMIN_USER_ID']
+    Rails.logger.info "ZaloService: admin_user_id = #{admin_user_id}"
     return unless admin_user_id
 
     message = "Đặt bàn mới: #{booking.customer_name} - #{booking.customer_phone} - #{booking.booking_date} #{booking.booking_time} - Số khách: #{booking.party_size}"
+    Rails.logger.info "ZaloService: sending message '#{message}' to #{admin_user_id}"
 
     send_message(admin_user_id, message)
   end
