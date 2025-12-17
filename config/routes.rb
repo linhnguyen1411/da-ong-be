@@ -24,6 +24,9 @@ Rails.application.routes.draw do
         end
       end
 
+      # Zalo webhook
+      post 'zalo/webhook', to: 'zalo_webhook#message'
+
       # Admin APIs
       namespace :admin do
         # File uploads

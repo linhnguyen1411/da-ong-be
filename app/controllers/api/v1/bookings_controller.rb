@@ -5,6 +5,9 @@ module Api
         booking = Booking.new(booking_params)
 
         if booking.save
+          # Send notification to admin via Zalo
+          ZaloService.send_admin_notification(booking)
+
           render json: { 
             message: 'Booking created successfully', 
             booking: booking.as_json(include: { booking_items: { include: :menu_item } })
