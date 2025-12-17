@@ -3,8 +3,15 @@ module Api
     class ZaloWebhookController < ApplicationController
 
       def message
-        # Verify the request is from Zalo (you should implement signature verification)
-        # For now, just log the user_id
+        # Log all incoming webhook data for debugging
+        Rails.logger.info "=== ZALO WEBHOOK RECEIVED ==="
+        Rails.logger.info "Full params: #{params.inspect}"
+        Rails.logger.info "Event name: #{params[:event_name]}"
+        Rails.logger.info "All parameters:"
+        params.each do |key, value|
+          Rails.logger.info "  #{key}: #{value.inspect}"
+        end
+        Rails.logger.info "=== END WEBHOOK ==="
 
         event_name = params[:event_name]
         Rails.logger.info "Zalo webhook event: #{event_name}"
@@ -25,6 +32,9 @@ module Api
         elsif event_name == 'oa_send_text'
           # OA sending message - just log
           Rails.logger.info "OA sent message to user #{params.dig(:recipient, :id)}"
+        elsif event_name == 'follow'
+          follower_id = params.dig(:follower, :id)
+          Rails.logger.info "User followed OA: #{follower_id}"
         end
 
         render json: { message: 'OK' }, status: :ok
