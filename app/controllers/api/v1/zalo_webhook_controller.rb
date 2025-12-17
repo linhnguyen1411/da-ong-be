@@ -29,6 +29,11 @@ module Api
 
         render json: { message: 'OK' }, status: :ok
       end
+
+      def followers
+        followers = ZaloService.get_followers
+        render json: { followers: followers }, status: :ok
+      end
     end
   end
 end

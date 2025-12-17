@@ -26,6 +26,7 @@ Rails.application.routes.draw do
 
       # Zalo webhook
       post 'zalo/webhook', to: 'zalo_webhook#message'
+      get 'zalo/followers', to: 'zalo_webhook#followers'
 
       # Admin APIs
       namespace :admin do

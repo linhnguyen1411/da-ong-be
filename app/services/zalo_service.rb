@@ -41,14 +41,21 @@ class ZaloService
     end
   end
 
-  def self.send_admin_notification(booking)
-    admin_user_id = ENV['ZALO_ADMIN_USER_ID']
-    Rails.logger.info "ZaloService: admin_user_id = #{admin_user_id}"
-    return unless admin_user_id
+  def self.get_followers
+    access_token = get_access_token
+    return [] unless access_token
 
-    message = "Đặt bàn mới: #{booking.customer_name} - #{booking.customer_phone} - #{booking.booking_date} #{booking.booking_time} - Số khách: #{booking.party_size}"
-    Rails.logger.info "ZaloService: sending message '#{message}' to #{admin_user_id}"
+    response = HTTParty.get("#{ZALO_API_BASE}/oa/getfollowers", headers: {
+      'access_token' => access_token
+    })
 
-    send_message(admin_user_id, message)
+    if response.success?
+      followers = JSON.parse(response.body)['data'] || []
+      Rails.logger.info "Zalo followers retrieved: #{followers.count} followers"
+      followers
+    else
+      Rails.logger.error "Failed to get Zalo followers: #{response.body}"
+      []
+    end
   end
 end
