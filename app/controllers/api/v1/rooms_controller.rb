@@ -2,7 +2,7 @@ module Api
   module V1
     class RoomsController < ApplicationController
       def index
-        rooms = Room.active.available.ordered.includes(:room_images)
+        rooms = Room.active.ordered.includes(:room_images)
 
         # Filter by availability if date and time are provided
         if params[:date].present? && params[:time].present?

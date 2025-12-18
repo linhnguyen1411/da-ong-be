@@ -9,7 +9,7 @@ module Api
           ZaloService.send_admin_notification(booking)
 
           render json: { 
-            message: 'Booking created successfully', 
+            message: 'Đặt bàn thành công', 
             booking: booking.as_json(include: { booking_items: { include: :menu_item } })
           }, status: :created
         else

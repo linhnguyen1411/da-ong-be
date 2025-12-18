@@ -16,7 +16,7 @@ module Api
             }
           }, status: :ok
         else
-          render json: { error: 'Invalid email or password' }, status: :unauthorized
+          render json: { error: 'Email hoặc mật khẩu không đúng' }, status: :unauthorized
         end
       end
 

@@ -30,7 +30,7 @@ class Room < ApplicationRecord
   # Helper method to get images URLs
   def images_urls
     if images.attached?
-      images.map { |img| Rails.application.routes.url_helpers.rails_blob_url(img, only_path: true) }
+      images.map { |img| Rails.application.routes.url_helpers.rails_blob_url(img, host: ENV['RAILS_HOST'] || 'https://nhahangdavaong.com') }
     else
       room_images.map(&:image_url)
     end
@@ -39,7 +39,7 @@ class Room < ApplicationRecord
   # Helper method to get thumbnail URL
   def thumbnail_url
     if images.attached?
-      Rails.application.routes.url_helpers.rails_blob_url(images.first, only_path: true)
+      Rails.application.routes.url_helpers.rails_blob_url(images.first, host: ENV['RAILS_HOST'] || 'https://nhahangdavaong.com')
     elsif room_images.any?
       room_images.first.image_url
     end
