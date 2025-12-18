@@ -1,7 +1,6 @@
 module Api
   module V1
     class ZaloWebhookController < ApplicationController
-      skip_forgery_protection
 
       def verify
         # Webhook verification for Zalo OA
