@@ -10,14 +10,21 @@ module Api
           time = Time.parse(params[:time])
 
           # Get rooms that don't have conflicting bookings
-          available_room_ids = rooms.map do |room|
-            existing_bookings = room.bookings
+          available_room_ids = []
+          rooms.each do |room|
+            # Check for bookings on the same date with overlapping time
+            conflicting_bookings = room.bookings
               .where(booking_date: date)
               .where(status: ['pending', 'confirmed'])
-              .where('booking_time BETWEEN ? AND ?', time - 2.hours, time + 2.hours)
+              .select do |booking|
+                booking_time = booking.booking_time
+                # Check if booking time overlaps with requested time ± 2 hours
+                time_diff = (booking_time.hour * 60 + booking_time.min) - (time.hour * 60 + time.min)
+                time_diff.abs <= 120 # 2 hours in minutes
+              end
 
-            room.id if existing_bookings.empty?
-          end.compact
+            available_room_ids << room.id if conflicting_bookings.empty?
+          end
 
           rooms = rooms.where(id: available_room_ids)
         end
