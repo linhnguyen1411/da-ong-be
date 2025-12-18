@@ -147,6 +147,23 @@ class ZaloService
 
       room_info = booking.room ? "Phòng: #{booking.room.name}\n" : ""
       
+      # Build menu items list if any
+      menu_items_info = ""
+      if booking.booking_items.present? && booking.booking_items.any?
+        menu_items_info = "\n🍽️ MÓN ĐÃ CHỌN:\n"
+        total_items_price = 0
+        
+        booking.booking_items.each do |item|
+          if item.menu_item.present?
+            item_total = item.menu_item.price.to_f * item.quantity
+            total_items_price += item_total
+            menu_items_info += "• #{item.menu_item.name} x#{item.quantity} - #{number_to_currency(item_total)}\n"
+          end
+        end
+        
+        menu_items_info += "💰 Tổng món: #{number_to_currency(total_items_price)}\n"
+      end
+      
       message = "🔔 CÓ ĐẶT BÀN MỚI!\n\n" \
                 "👤 Khách hàng: #{booking.customer_name}\n" \
                 "📞 SĐT: #{booking.customer_phone}\n" \
@@ -154,10 +171,17 @@ class ZaloService
                 "📅 Ngày: #{booking.booking_date&.strftime('%d/%m/%Y')}\n" \
                 "🕐 Giờ: #{booking.booking_time&.strftime('%H:%M')}\n" \
                 "#{room_info}" \
+                "#{menu_items_info}" \
                 "📝 Ghi chú: #{booking.notes || 'Không có'}\n\n" \
                 "Vui lòng xác nhận đơn đặt bàn!"
 
       send_message(admin_user_id, message)
+    end
+    
+    # Format number as Vietnamese currency
+    def number_to_currency(number)
+      return "0đ" if number.nil? || number.zero?
+      number.to_i.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1.').reverse + "đ"
     end
 
     # ===============================
