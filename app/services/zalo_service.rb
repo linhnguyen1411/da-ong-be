@@ -142,8 +142,12 @@ class ZaloService
     # Send admin notification
     # ===============================
     def send_admin_notification(booking)
-      admin_user_id = ENV['ZALO_ADMIN_USER_IDS']
-      return unless admin_user_id.present?
+      admin_ids_str = ENV['ZALO_ADMIN_USER_IDS']
+      return unless admin_ids_str.present?
+
+      # Support comma-separated list of admin IDs
+      admin_ids = admin_ids_str.split(',').map(&:strip).reject(&:blank?)
+      return if admin_ids.empty?
 
       room_info = booking.room ? "Phòng: #{booking.room.name}\n" : ""
       
@@ -175,7 +179,11 @@ class ZaloService
                 "📝 Ghi chú: #{booking.notes || 'Không có'}\n\n" \
                 "Vui lòng xác nhận đơn đặt bàn!"
 
-      send_message(admin_user_id, message)
+      # Send to all admins
+      admin_ids.each do |admin_id|
+        Rails.logger.info "[ZALO] Sending notification to admin: #{admin_id}"
+        send_message(admin_id, message)
+      end
     end
     
     # Format number as Vietnamese currency
