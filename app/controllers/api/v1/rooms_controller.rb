@@ -12,10 +12,10 @@ module Api
           time = params[:time].present? ? Time.parse(params[:time]) : nil
 
           rooms.each do |room|
-            # Check for bookings on the same date
+            # Check for CONFIRMED bookings on the same date only
             conflicting_bookings = room.bookings
               .where(booking_date: date)
-              .where(status: ['pending', 'confirmed'])
+              .where(status: 'confirmed')
             
             # If time is provided, check for time overlap (± 2 hours)
             if time.present?
