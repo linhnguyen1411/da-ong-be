@@ -1,6 +1,18 @@
 module Api
   module V1
     class ZaloWebhookController < ApplicationController
+      # Guarded skip for CSRF verification: some production setups (API-only)
+      # may not define the :verify_authenticity_token callback. Calling
+      # `skip_before_action` unguarded sometimes raises ArgumentError during
+      # boot (callback not defined). Wrap in begin/rescue so the app won't
+      # abort startup on older deployments that still call this.
+      begin
+        skip_before_action :verify_authenticity_token
+      rescue ArgumentError => e
+        Rails.logger.info "skip_before_action :verify_authenticity_token not applied: #{e.message}"
+      rescue NameError => e
+        Rails.logger.info "skip_before_action not available: #{e.message}"
+      end
 
       def verify
         # Webhook verification for Zalo OA
