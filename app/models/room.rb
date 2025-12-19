@@ -27,7 +27,7 @@ class Room < ApplicationRecord
     status == 'occupied'
   end
 
-  # Helper method to get images URLs
+  # Helper method to get images URLs (original size)
   def images_urls
     if images.attached?
       images.map { |img| rails_storage_proxy_url(img) }
@@ -36,10 +36,46 @@ class Room < ApplicationRecord
     end
   end
 
-  # Helper method to get thumbnail URL
+  # Helper method to get optimized/resized images URLs for faster loading
+  def images_urls_medium
+    if images.attached?
+      images.map { |img| variant_url(img, resize_to_limit: [800, 600]) }
+    else
+      room_images.map(&:image_url)
+    end
+  end
+
+  # Helper method to get small thumbnail URLs
+  def images_urls_thumb
+    if images.attached?
+      images.map { |img| variant_url(img, resize_to_limit: [400, 300]) }
+    else
+      room_images.map(&:image_url)
+    end
+  end
+
+  # Helper method to get thumbnail URL (original)
   def thumbnail_url
     if images.attached?
       rails_storage_proxy_url(images.first)
+    elsif room_images.any?
+      room_images.first.image_url
+    end
+  end
+
+  # Helper method to get optimized thumbnail URL
+  def thumbnail_url_medium
+    if images.attached?
+      variant_url(images.first, resize_to_limit: [800, 600])
+    elsif room_images.any?
+      room_images.first.image_url
+    end
+  end
+
+  # Helper method to get small thumbnail URL
+  def thumbnail_url_thumb
+    if images.attached?
+      variant_url(images.first, resize_to_limit: [400, 300])
     elsif room_images.any?
       room_images.first.image_url
     end
@@ -49,6 +85,16 @@ class Room < ApplicationRecord
     return nil unless attachment.present?
     host = ENV['APP_HOST'] || 'nhahangdavaong.com'
     Rails.application.routes.url_helpers.rails_storage_proxy_url(attachment, host: host, protocol: 'https')
+  end
+
+  def variant_url(attachment, transformations)
+    return nil unless attachment.present?
+    host = ENV['APP_HOST'] || 'nhahangdavaong.com'
+    variant = attachment.variant(transformations)
+    Rails.application.routes.url_helpers.rails_storage_proxy_url(variant, host: host, protocol: 'https')
+  rescue => e
+    Rails.logger.error "Error generating variant URL: #{e.message}"
+    rails_storage_proxy_url(attachment) # Fallback to original
   end
 
   private

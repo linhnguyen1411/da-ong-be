@@ -34,7 +34,7 @@ module Api
         render json: rooms.map { |room|
           room.as_json(
             only: [:id, :name, :description, :capacity, :has_sound_system, :has_projector, :has_karaoke, :price_per_hour, :status, :position, :room_type],
-            methods: [:images_urls, :thumbnail_url],
+            methods: [:images_urls, :images_urls_medium, :images_urls_thumb, :thumbnail_url, :thumbnail_url_medium, :thumbnail_url_thumb],
             include: { room_images: { only: [:id, :image_url, :caption] } }
           ).merge(booked_for_date: booked_room_ids.include?(room.id))
         }
@@ -44,7 +44,7 @@ module Api
         room = Room.find(params[:id])
         render json: room.as_json(
           only: [:id, :name, :description, :capacity, :has_sound_system, :has_projector, :has_karaoke, :price_per_hour, :status, :position, :room_type],
-          methods: [:images_urls, :thumbnail_url],
+          methods: [:images_urls, :images_urls_medium, :images_urls_thumb, :thumbnail_url, :thumbnail_url_medium, :thumbnail_url_thumb],
           include: :room_images
         )
       end
