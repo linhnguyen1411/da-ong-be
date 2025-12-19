@@ -45,13 +45,13 @@ class Room < ApplicationRecord
     end
   end
 
-  private
-
   def rails_storage_proxy_url(attachment)
-    return nil unless attachment.attached?
+    return nil unless attachment.present?
     host = ENV['APP_HOST'] || 'nhahangdavaong.com'
     Rails.application.routes.url_helpers.rails_storage_proxy_url(attachment, host: host, protocol: 'https')
   end
+
+  private
 
   private
 
