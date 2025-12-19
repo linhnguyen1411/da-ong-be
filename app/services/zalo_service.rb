@@ -177,7 +177,7 @@ class ZaloService
                 "#{room_info}" \
                 "#{menu_items_info}" \
                 "📝 Ghi chú: #{booking.notes || 'Không có'}\n\n" \
-                "Vui lòng xác nhận đơn đặt bàn!"
+                "👉 Xác nhận tại: https://nhahangdavaong.com/admin/bookings"
 
       # Send to all admins
       admin_ids.each do |admin_id|
