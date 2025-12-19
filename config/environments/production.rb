@@ -80,6 +80,10 @@ Rails.application.configure do
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
 
+  # Set default URL options for Active Storage and URL helpers
+  Rails.application.routes.default_url_options[:host] = ENV.fetch('APP_HOST', 'nhahangdavaong.com')
+  Rails.application.routes.default_url_options[:protocol] = 'https'
+
   # Enable DNS rebinding protection and other `Host` header attacks.
   # config.hosts = [
   #   "example.com",     # Allow requests from example.com
