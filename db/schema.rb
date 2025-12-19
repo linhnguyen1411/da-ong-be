@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_12_13_094130) do
+ActiveRecord::Schema[7.1].define(version: 2025_12_18_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -166,6 +166,17 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_13_094130) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "room_type", default: "private"
+  end
+
+  create_table "zalo_tokens", force: :cascade do |t|
+    t.text "access_token"
+    t.text "refresh_token"
+    t.datetime "access_token_expires_at"
+    t.datetime "refresh_token_expires_at"
+    t.string "oa_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["oa_id"], name: "index_zalo_tokens_on_oa_id", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

@@ -3,7 +3,6 @@ class Booking < ApplicationRecord
   has_many :booking_items, dependent: :destroy
   has_many :menu_items, through: :booking_items
 
-  validates :customer_name, presence: true
   validates :customer_phone, presence: true
   validates :party_size, presence: true, numericality: { greater_than: 0 }
   validates :booking_date, presence: true
