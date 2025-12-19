@@ -30,7 +30,7 @@ class Room < ApplicationRecord
   # Helper method to get images URLs
   def images_urls
     if images.attached?
-      images.map { |img| Rails.application.routes.url_helpers.rails_blob_url(img, host: ENV['RAILS_HOST'] || 'https://nhahangdavaong.com') }
+      images.map { |img| rails_storage_proxy_url(img) }
     else
       room_images.map(&:image_url)
     end
@@ -39,10 +39,18 @@ class Room < ApplicationRecord
   # Helper method to get thumbnail URL
   def thumbnail_url
     if images.attached?
-      Rails.application.routes.url_helpers.rails_blob_url(images.first, host: ENV['RAILS_HOST'] || 'https://nhahangdavaong.com')
+      rails_storage_proxy_url(images.first)
     elsif room_images.any?
       room_images.first.image_url
     end
+  end
+
+  private
+
+  def rails_storage_proxy_url(attachment)
+    return nil unless attachment.attached?
+    host = ENV['APP_HOST'] || 'nhahangdavaong.com'
+    Rails.application.routes.url_helpers.rails_storage_proxy_url(attachment, host: host, protocol: 'https')
   end
 
   private

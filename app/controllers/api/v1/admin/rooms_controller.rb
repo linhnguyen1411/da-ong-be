@@ -93,8 +93,14 @@ module Api
         end
 
         def room_json(room)
+          host = ENV['APP_HOST'] || 'nhahangdavaong.com'
           room.as_json(methods: [:images_urls, :thumbnail_url]).merge(
-            images: room.images.map { |img| { id: img.id, url: Rails.application.routes.url_helpers.url_for(img) } }
+            images: room.images.map { |img| 
+              { 
+                id: img.id, 
+                url: Rails.application.routes.url_helpers.rails_storage_proxy_url(img, host: host, protocol: 'https') 
+              } 
+            }
           )
         end
       end
