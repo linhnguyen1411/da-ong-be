@@ -105,7 +105,7 @@ module Api
         end
 
         def menu_item_params
-          params.permit(:category_id, :name, :description, :price, :image_url, :active, :position)
+          params.permit(:category_id, :name, :description, :price, :image_url, :active, :position, :is_market_price)
         end
 
         def menu_item_json(item)
