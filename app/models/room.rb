@@ -39,7 +39,14 @@ class Room < ApplicationRecord
   # Helper method to get optimized/resized images URLs for faster loading
   def images_urls_medium
     if images.attached?
-      images.map { |img| variant_url(img, resize_to_limit: [800, 600]) }
+      images.map { |img| 
+        begin
+          variant_url(img, resize_to_limit: [800, 600]) || rails_storage_proxy_url(img)
+        rescue => e
+          Rails.logger.error "Error in images_urls_medium for image #{img.id}: #{e.message}"
+          rails_storage_proxy_url(img)
+        end
+      }
     else
       room_images.map(&:image_url)
     end
@@ -48,7 +55,14 @@ class Room < ApplicationRecord
   # Helper method to get small thumbnail URLs
   def images_urls_thumb
     if images.attached?
-      images.map { |img| variant_url(img, resize_to_limit: [400, 300]) }
+      images.map { |img| 
+        begin
+          variant_url(img, resize_to_limit: [400, 300]) || rails_storage_proxy_url(img)
+        rescue => e
+          Rails.logger.error "Error in images_urls_thumb for image #{img.id}: #{e.message}"
+          rails_storage_proxy_url(img)
+        end
+      }
     else
       room_images.map(&:image_url)
     end
@@ -66,7 +80,12 @@ class Room < ApplicationRecord
   # Helper method to get optimized thumbnail URL
   def thumbnail_url_medium
     if images.attached?
-      variant_url(images.first, resize_to_limit: [800, 600])
+      begin
+        variant_url(images.first, resize_to_limit: [800, 600]) || thumbnail_url
+      rescue => e
+        Rails.logger.error "Error in thumbnail_url_medium: #{e.message}"
+        thumbnail_url
+      end
     elsif room_images.any?
       room_images.first.image_url
     end
@@ -75,7 +94,12 @@ class Room < ApplicationRecord
   # Helper method to get small thumbnail URL
   def thumbnail_url_thumb
     if images.attached?
-      variant_url(images.first, resize_to_limit: [400, 300])
+      begin
+        variant_url(images.first, resize_to_limit: [400, 300]) || thumbnail_url
+      rescue => e
+        Rails.logger.error "Error in thumbnail_url_thumb: #{e.message}"
+        thumbnail_url
+      end
     elsif room_images.any?
       room_images.first.image_url
     end
