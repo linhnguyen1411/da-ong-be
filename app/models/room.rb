@@ -92,12 +92,16 @@ class Room < ApplicationRecord
     host = ENV['APP_HOST'] || 'nhahangdavaong.com'
     
     begin
-      # Process variant synchronously to ensure it exists
-      variant = attachment.variant(transformations).processed
+      # Create variant URL without processing (Rails will process on-demand)
+      variant = attachment.variant(transformations)
       Rails.application.routes.url_helpers.rails_storage_proxy_url(variant, host: host, protocol: 'https')
+    rescue LoadError => e
+      # If vips/image_processing library is missing, fallback to original
+      Rails.logger.error "Image processing library not available: #{e.message}"
+      rails_storage_proxy_url(attachment)
     rescue => e
       Rails.logger.error "Error generating variant URL: #{e.message}"
-      Rails.logger.error e.backtrace.first(5).join("\n")
+      Rails.logger.error e.backtrace.first(3).join("\n")
       # Fallback to original image
       rails_storage_proxy_url(attachment)
     end
