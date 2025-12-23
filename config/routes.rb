@@ -47,6 +47,8 @@ Rails.application.routes.draw do
           end
           collection do
             post :reorder
+            get :export
+            post :import
           end
         end
 

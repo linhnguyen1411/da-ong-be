@@ -98,6 +98,98 @@ module Api
           render json: { message: 'Menu items reordered successfully' }
         end
 
+        # GET /api/v1/admin/menu_items/export
+        def export
+          require 'caxlsx'
+          
+          package = Axlsx::Package.new
+          workbook = package.workbook
+          workbook.add_worksheet(name: "Món ăn") do |sheet|
+            # Header
+            sheet.add_row ["Mã Hàng", "Tên món ăn", "Đơn vị tính", "Giá", "Ghi chú"]
+            
+            # Data
+            MenuItem.includes(:category).ordered.each do |item|
+              sheet.add_row [
+                item.product_code || '',
+                item.name || '',
+                item.unit || '',
+                item.is_market_price ? 'Thời giá' : (item.price || 0),
+                item.description || ''
+              ]
+            end
+          end
+          
+          send_data package.to_stream.read, 
+                    filename: "mon_an_#{Date.current.strftime('%Y%m%d')}.xlsx",
+                    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        end
+
+        # POST /api/v1/admin/menu_items/import
+        def import
+          unless params[:file].present?
+            render json: { error: 'No file uploaded' }, status: :bad_request
+            return
+          end
+
+          require 'roo'
+          
+          begin
+            file = params[:file]
+            spreadsheet = Roo::Spreadsheet.open(file.path, extension: :xlsx)
+            sheet = spreadsheet.sheet(0)
+            
+            updated_count = 0
+            errors = []
+            
+            # Skip header row (row 1)
+            (2..sheet.last_row).each do |row|
+              next if sheet.row(row).all?(&:nil?) # Skip empty rows
+              
+              product_code = sheet.cell(row, 1).to_s.strip
+              name = sheet.cell(row, 2).to_s.strip
+              unit = sheet.cell(row, 3).to_s.strip
+              price_str = sheet.cell(row, 4).to_s.strip
+              description = sheet.cell(row, 5).to_s.strip
+              
+              next if name.blank? # Skip if no name
+              
+              # Find menu item by product_code or name
+              menu_item = if product_code.present?
+                MenuItem.find_by(product_code: product_code) || MenuItem.find_by(name: name)
+              else
+                MenuItem.find_by(name: name)
+              end
+              
+              if menu_item
+                # Update existing item
+                is_market_price = price_str.downcase.include?('thời giá') || price_str.downcase.include?('thoi gia')
+                price = is_market_price ? 0 : (price_str.gsub(/[^\d]/, '').to_f)
+                
+                menu_item.update(
+                  product_code: product_code.presence || menu_item.product_code,
+                  name: name,
+                  unit: unit.presence || menu_item.unit,
+                  price: price,
+                  description: description.presence || menu_item.description,
+                  is_market_price: is_market_price
+                )
+                updated_count += 1
+              else
+                errors << "Dòng #{row}: Không tìm thấy món ăn với mã '#{product_code}' hoặc tên '#{name}'"
+              end
+            end
+            
+            render json: { 
+              message: "Import thành công. Đã cập nhật #{updated_count} món ăn.",
+              updated_count: updated_count,
+              errors: errors
+            }
+          rescue => e
+            render json: { error: "Lỗi import: #{e.message}" }, status: :unprocessable_entity
+          end
+        end
+
         private
 
         def set_menu_item
@@ -105,7 +197,7 @@ module Api
         end
 
         def menu_item_params
-          params.permit(:category_id, :name, :description, :price, :image_url, :active, :position, :is_market_price)
+          params.permit(:category_id, :name, :description, :price, :image_url, :active, :position, :is_market_price, :product_code, :unit)
         end
 
         def menu_item_json(item)
