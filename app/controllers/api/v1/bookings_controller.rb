@@ -2,12 +2,17 @@ module Api
   module V1
     class BookingsController < ApplicationController
       def create
+        # Handle params from both root level and nested "booking" key
+        booking_params_to_use = params[:booking].present? ? params[:booking] : params
+        
         # Validate menu items exist before creating booking
-        if params[:booking_items_attributes].present?
+        items_attrs = booking_params_to_use[:booking_items_attributes] || params[:booking_items_attributes]
+        if items_attrs.present?
           invalid_items = []
-          params[:booking_items_attributes].each do |item|
-            unless MenuItem.exists?(id: item[:menu_item_id])
-              invalid_items << "Menu item ID #{item[:menu_item_id]} không tồn tại"
+          Array(items_attrs).each do |item|
+            menu_item_id = item[:menu_item_id] || item['menu_item_id']
+            if menu_item_id.present? && !MenuItem.exists?(id: menu_item_id)
+              invalid_items << "Menu item ID #{menu_item_id} không tồn tại"
             end
           end
           
