@@ -96,12 +96,24 @@ module Api
           host = ENV['APP_HOST'] || 'nhahangdavaong.com'
           room.as_json(methods: [:images_urls, :images_urls_medium, :images_urls_thumb, :thumbnail_url, :thumbnail_url_medium, :thumbnail_url_thumb]).merge(
             images: room.images.map { |img| 
-              { 
-                id: img.id, 
-                url: Rails.application.routes.url_helpers.rails_storage_proxy_url(img, host: host, protocol: 'https'),
-                url_medium: room.variant_url(img, resize_to_limit: [800, 600]),
-                url_thumb: room.variant_url(img, resize_to_limit: [400, 300])
-              } 
+              begin
+                original_url = Rails.application.routes.url_helpers.rails_storage_proxy_url(img, host: host, protocol: 'https')
+                { 
+                  id: img.id, 
+                  url: original_url,
+                  url_medium: room.variant_url(img, resize_to_limit: [800, 600]) || original_url,
+                  url_thumb: room.variant_url(img, resize_to_limit: [400, 300]) || original_url
+                }
+              rescue => e
+                Rails.logger.error "Error processing image #{img.id}: #{e.message}"
+                original_url = Rails.application.routes.url_helpers.rails_storage_proxy_url(img, host: host, protocol: 'https')
+                {
+                  id: img.id,
+                  url: original_url,
+                  url_medium: original_url,
+                  url_thumb: original_url
+                }
+              end
             }
           )
         end

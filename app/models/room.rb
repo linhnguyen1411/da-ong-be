@@ -90,11 +90,17 @@ class Room < ApplicationRecord
   def variant_url(attachment, transformations)
     return nil unless attachment.present?
     host = ENV['APP_HOST'] || 'nhahangdavaong.com'
-    variant = attachment.variant(transformations)
-    Rails.application.routes.url_helpers.rails_storage_proxy_url(variant, host: host, protocol: 'https')
-  rescue => e
-    Rails.logger.error "Error generating variant URL: #{e.message}"
-    rails_storage_proxy_url(attachment) # Fallback to original
+    
+    begin
+      # Process variant synchronously to ensure it exists
+      variant = attachment.variant(transformations).processed
+      Rails.application.routes.url_helpers.rails_storage_proxy_url(variant, host: host, protocol: 'https')
+    rescue => e
+      Rails.logger.error "Error generating variant URL: #{e.message}"
+      Rails.logger.error e.backtrace.first(5).join("\n")
+      # Fallback to original image
+      rails_storage_proxy_url(attachment)
+    end
   end
 
   private
