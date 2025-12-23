@@ -2,6 +2,21 @@ module Api
   module V1
     class BookingsController < ApplicationController
       def create
+        # Validate menu items exist before creating booking
+        if params[:booking_items_attributes].present?
+          invalid_items = []
+          params[:booking_items_attributes].each do |item|
+            unless MenuItem.exists?(id: item[:menu_item_id])
+              invalid_items << "Menu item ID #{item[:menu_item_id]} không tồn tại"
+            end
+          end
+          
+          if invalid_items.any?
+            render json: { errors: invalid_items }, status: :unprocessable_entity
+            return
+          end
+        end
+
         booking = Booking.new(booking_params)
 
         if booking.save
