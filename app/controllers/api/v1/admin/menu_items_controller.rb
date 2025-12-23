@@ -105,8 +105,8 @@ module Api
           package = Axlsx::Package.new
           workbook = package.workbook
           workbook.add_worksheet(name: "Món ăn") do |sheet|
-            # Header
-            sheet.add_row ["Mã Hàng", "Tên món ăn", "Đơn vị tính", "Giá", "Ghi chú"]
+            # Header - đúng thứ tự và tên cột
+            sheet.add_row ["Mã hàng", "Tên hàng", "Đơn vị tính", "Giá bán", "GHI CHÚ"]
             
             # Data
             MenuItem.includes(:category).ordered.each do |item|
@@ -115,7 +115,7 @@ module Api
                 item.name || '',
                 item.unit || '',
                 item.is_market_price ? 'Thời giá' : (item.price || 0),
-                item.description || ''
+                '' # Ghi chú để trống
               ]
             end
           end
