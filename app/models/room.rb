@@ -116,12 +116,21 @@ class Room < ApplicationRecord
     host = ENV['APP_HOST'] || 'nhahangdavaong.com'
     
     begin
-      # Create variant URL without processing (Rails will process on-demand)
+      # Process variant synchronously to avoid HTTP/2 protocol errors
+      # This ensures the variant is ready before returning the URL
       variant = attachment.variant(transformations)
-      Rails.application.routes.url_helpers.rails_storage_proxy_url(variant, host: host, protocol: 'https')
+      
+      # Process the variant to ensure it exists before generating URL
+      # This prevents ERR_HTTP2_PROTOCOL_ERROR when the variant isn't ready
+      processed_variant = variant.processed
+      
+      Rails.application.routes.url_helpers.rails_storage_proxy_url(processed_variant, host: host, protocol: 'https')
     rescue LoadError => e
       # If vips/image_processing library is missing, fallback to original
       Rails.logger.error "Image processing library not available: #{e.message}"
+      rails_storage_proxy_url(attachment)
+    rescue ActiveStorage::FileNotFoundError, MiniMagick::Error, ImageProcessing::Error => e
+      Rails.logger.error "Error processing variant: #{e.message}. Falling back to original."
       rails_storage_proxy_url(attachment)
     rescue => e
       Rails.logger.error "Error generating variant URL: #{e.message}"
