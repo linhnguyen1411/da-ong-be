@@ -1,13 +1,14 @@
 class Room < ApplicationRecord
   has_many :room_images, dependent: :destroy
   has_many :bookings, dependent: :destroy
+  has_many :room_schedules, dependent: :destroy
 
   # Active Storage - multiple images
   has_many_attached :images
 
   validates :name, presence: true, uniqueness: true
   validates :capacity, presence: true, numericality: { greater_than: 0 }
-  validates :status, presence: true, inclusion: { in: %w[available occupied maintenance] }
+  validates :status, presence: true, inclusion: { in: %w[available maintenance] }
 
   before_validation :set_defaults, on: :create
   before_save :handle_position_change, if: :will_save_change_to_position?
@@ -23,8 +24,8 @@ class Room < ApplicationRecord
     status == 'available'
   end
 
-  def occupied?
-    status == 'occupied'
+  def maintenance?
+    status == 'maintenance'
   end
 
   # Helper method to get images URLs (original size)

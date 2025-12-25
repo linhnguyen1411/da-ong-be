@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_12_23_083333) do
+ActiveRecord::Schema[7.1].define(version: 2025_12_25_081202) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -156,6 +156,22 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_23_083333) do
     t.index ["room_id"], name: "index_room_images_on_room_id"
   end
 
+  create_table "room_schedules", force: :cascade do |t|
+    t.bigint "room_id", null: false
+    t.bigint "booking_id"
+    t.date "schedule_date", null: false
+    t.time "start_time", null: false
+    t.time "end_time", null: false
+    t.string "status", default: "active", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["booking_id"], name: "index_room_schedules_on_booking_id"
+    t.index ["room_id", "schedule_date", "start_time"], name: "index_room_schedules_on_room_date_time"
+    t.index ["room_id"], name: "index_room_schedules_on_room_id"
+    t.index ["schedule_date", "status"], name: "index_room_schedules_on_date_status"
+  end
+
   create_table "rooms", force: :cascade do |t|
     t.string "name"
     t.text "description"
@@ -192,4 +208,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_23_083333) do
   add_foreign_key "daily_specials", "menu_items"
   add_foreign_key "menu_items", "categories"
   add_foreign_key "room_images", "rooms"
+  add_foreign_key "room_schedules", "bookings"
+  add_foreign_key "room_schedules", "rooms"
 end

@@ -71,10 +71,10 @@ module Api
         end
 
         def stats
+          # occupied status is now calculated from room_schedules, not stored in room.status
           render json: {
             total: Room.count,
             available: Room.available.count,
-            occupied: Room.where(status: 'occupied').count,
             maintenance: Room.where(status: 'maintenance').count
           }
         end

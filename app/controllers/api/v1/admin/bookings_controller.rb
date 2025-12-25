@@ -48,7 +48,13 @@ module Api
 
         def update
           if @booking.update(booking_params)
-            render json: @booking.as_json(include: { booking_items: { include: :menu_item } })
+            booking_json = @booking.as_json(
+              include: { booking_items: { include: :menu_item } },
+              methods: [:formatted_booking_time]
+            )
+            booking_json['booking_time'] = booking_json['formatted_booking_time'] || booking_json['booking_time']
+            booking_json.delete('formatted_booking_time')
+            render json: booking_json
           else
             render json: { errors: @booking.errors.full_messages }, status: :unprocessable_entity
           end

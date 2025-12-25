@@ -2,6 +2,7 @@ class Booking < ApplicationRecord
   belongs_to :room, optional: true
   has_many :booking_items, dependent: :destroy
   has_many :menu_items, through: :booking_items
+  has_one :room_schedule, dependent: :destroy
 
   validates :customer_phone, presence: true
   validates :party_size, presence: true, numericality: { greater_than: 0 }
@@ -23,44 +24,52 @@ class Booking < ApplicationRecord
 
   def confirm!
     update!(status: 'confirmed', confirmed_at: Time.current)
-    # Đánh dấu phòng đang sử dụng nếu booking hôm nay
-    room&.update!(status: 'occupied') if booking_date == Date.current
+    # Tạo room_schedule khi confirm booking có phòng
+    create_room_schedule! if room.present?
   end
 
   def cancel!
     update!(status: 'cancelled', cancelled_at: Time.current)
-    # Trả phòng về trạng thái trống nếu không còn booking nào khác
-    release_room_if_no_other_bookings
+    # Hủy room_schedule nếu có
+    room_schedule&.cancel!
   end
 
   def complete!
     update!(status: 'completed')
-    # Trả phòng về trạng thái trống
-    release_room_if_no_other_bookings
+    # Đánh dấu room_schedule là completed
+    room_schedule&.complete!
   end
 
   def total_amount
     booking_items.includes(:menu_item).sum { |item| item.menu_item.price * item.quantity }
   end
 
-  # Format booking_time as HH:MM string (timezone-safe)
+  # Helper to format booking_time in the application's timezone
   def formatted_booking_time
-    return nil unless booking_time
-    booking_time.strftime('%H:%M')
+    booking_time&.strftime('%H:%M')
   end
 
   private
 
-  def release_room_if_no_other_bookings
-    return unless room
-    
-    # Kiểm tra xem còn booking nào khác cho phòng này hôm nay không
-    other_bookings = room.bookings
-                         .where(booking_date: Date.current)
-                         .where(status: ['pending', 'confirmed'])
-                         .where.not(id: id)
-    
-    room.update!(status: 'available') if other_bookings.empty?
+  def create_room_schedule!
+    return if room_schedule.present? # Đã có schedule rồi
+    return unless room.present? # Không có phòng thì không tạo schedule
+
+    # Tính end_time từ start_time + duration_hours
+    # booking_time là Time object, extract chỉ time part (HH:MM:SS)
+    start_time_str = booking_time.strftime('%H:%M:%S')
+    # Tính end_time: lấy time part từ booking_time + duration
+    end_time_obj = booking_time + (duration_hours || 2).hours
+    end_time_str = end_time_obj.strftime('%H:%M:%S')
+
+    RoomSchedule.create!(
+      room: room,
+      booking: self,
+      schedule_date: booking_date,
+      start_time: start_time_str, # Lưu dạng string "HH:MM:SS"
+      end_time: end_time_str,      # Lưu dạng string "HH:MM:SS"
+      status: 'active'
+    )
   end
 
   def set_defaults
