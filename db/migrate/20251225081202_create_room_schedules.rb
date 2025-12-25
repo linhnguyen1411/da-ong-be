@@ -12,8 +12,8 @@ class CreateRoomSchedules < ActiveRecord::Migration[7.1]
       t.timestamps
     end
 
-    add_index :room_schedules, [:room_id, :schedule_date, :start_time], name: 'index_room_schedules_on_room_date_time'
-    add_index :room_schedules, [:schedule_date, :status], name: 'index_room_schedules_on_date_status'
-    add_index :room_schedules, :booking_id, name: 'index_room_schedules_on_booking_id'
+    add_index :room_schedules, [:room_id, :schedule_date, :start_time], name: 'index_room_schedules_on_room_date_time' unless index_exists?(:room_schedules, [:room_id, :schedule_date, :start_time], name: 'index_room_schedules_on_room_date_time')
+    add_index :room_schedules, [:schedule_date, :status], name: 'index_room_schedules_on_date_status' unless index_exists?(:room_schedules, [:schedule_date, :status], name: 'index_room_schedules_on_date_status')
+    add_index :room_schedules, :booking_id, name: 'index_room_schedules_on_booking_id' unless index_exists?(:room_schedules, :booking_id, name: 'index_room_schedules_on_booking_id')
   end
 end
