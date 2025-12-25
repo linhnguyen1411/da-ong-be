@@ -25,18 +25,25 @@ module Api
               room: { only: [:id, :name] },
               booking_items: { include: { menu_item: { only: [:id, :name, :price] } } }
             },
-            methods: [:total_amount]
-          )
+            methods: [:total_amount, :formatted_booking_time]
+          ).map do |booking|
+            booking['booking_time'] = booking['formatted_booking_time'] || booking['booking_time']
+            booking.delete('formatted_booking_time')
+            booking
+          end
         end
 
         def show
-          render json: @booking.as_json(
+          booking_json = @booking.as_json(
             include: { 
               room: { only: [:id, :name, :capacity] },
               booking_items: { include: :menu_item }
             },
-            methods: [:total_amount]
+            methods: [:total_amount, :formatted_booking_time]
           )
+          booking_json['booking_time'] = booking_json['formatted_booking_time'] || booking_json['booking_time']
+          booking_json.delete('formatted_booking_time')
+          render json: booking_json
         end
 
         def update
@@ -71,8 +78,12 @@ module Api
           bookings = Booking.today.includes(:room, booking_items: :menu_item)
           render json: bookings.as_json(
             include: { room: { only: [:id, :name] } },
-            methods: [:total_amount]
-          )
+            methods: [:total_amount, :formatted_booking_time]
+          ).map do |booking|
+            booking['booking_time'] = booking['formatted_booking_time'] || booking['booking_time']
+            booking.delete('formatted_booking_time')
+            booking
+          end
         end
 
         def upcoming
@@ -103,7 +114,14 @@ module Api
               confirmed: Booking.confirmed.count,
               today: Booking.today.count
             },
-            today_bookings: Booking.today.includes(:room).as_json(include: { room: { only: [:id, :name] } }),
+            today_bookings: Booking.today.includes(:room).as_json(
+              include: { room: { only: [:id, :name] } },
+              methods: [:formatted_booking_time]
+            ).map do |booking|
+              booking['booking_time'] = booking['formatted_booking_time'] || booking['booking_time']
+              booking.delete('formatted_booking_time')
+              booking
+            end,
             upcoming_bookings: Booking.upcoming.limit(10).includes(:room).as_json(include: { room: { only: [:id, :name] } }),
             recent_contacts: Contact.unread.limit(5).as_json,
             room_status: Room.ordered.as_json(only: [:id, :name, :status, :capacity])

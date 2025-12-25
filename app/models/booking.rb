@@ -43,6 +43,12 @@ class Booking < ApplicationRecord
     booking_items.includes(:menu_item).sum { |item| item.menu_item.price * item.quantity }
   end
 
+  # Format booking_time as HH:MM string (timezone-safe)
+  def formatted_booking_time
+    return nil unless booking_time
+    booking_time.strftime('%H:%M')
+  end
+
   private
 
   def release_room_if_no_other_bookings
