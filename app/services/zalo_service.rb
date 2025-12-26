@@ -28,10 +28,20 @@ class ZaloService
     def access_token
       token_record = ZaloToken.current
       
-      # If no token stored or refresh token expired, use ENV fallback
+      # If no token stored or refresh token expired, try to initialize from ENV
       if token_record.new_record? || token_record.refresh_token_expired?
-        Rails.logger.warn "[ZALO] No valid token in DB, using ENV fallback"
-        return ENV['ZALO_OA_ACCESS_TOKEN']
+        Rails.logger.warn "[ZALO] No valid token in DB, trying to initialize from ENV..."
+        if ENV['ZALO_OA_ACCESS_TOKEN'].present? && ENV['ZALO_OA_REFRESH_TOKEN'].present?
+          initialize_tokens(
+            access_token: ENV['ZALO_OA_ACCESS_TOKEN'],
+            refresh_token: ENV['ZALO_OA_REFRESH_TOKEN'],
+            expires_in: 3600
+          )
+          token_record.reload
+        else
+          Rails.logger.warn "[ZALO] No refresh token in ENV, using access token fallback"
+          return ENV['ZALO_OA_ACCESS_TOKEN']
+        end
       end
       
       # If access token expired, refresh it
