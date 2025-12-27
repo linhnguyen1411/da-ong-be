@@ -11,6 +11,9 @@ Rails.application.routes.draw do
       post 'auth/login', to: 'auth#login'
       get 'auth/me', to: 'auth#me'
 
+      # Health check
+      get 'health', to: 'health#index'
+
       # Public APIs
       resources :categories, only: [:index, :show]
       resources :menu_items, only: [:index, :show]
