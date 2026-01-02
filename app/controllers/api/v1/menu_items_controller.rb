@@ -21,6 +21,9 @@ module Api
       def menu_item_json(item)
         json = item.as_json(include: { category: { only: [:id, :name] } })
         
+        # Đảm bảo unit được serialize đúng (enum)
+        json['unit'] = item.unit
+        
         # Trả về mảng images_urls
         json['images_urls'] = item.images.attached? ? 
           item.images.map { |img| rails_blob_url(img, only_path: true) } : []

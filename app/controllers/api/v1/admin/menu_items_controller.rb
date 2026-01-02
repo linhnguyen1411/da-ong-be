@@ -5,11 +5,19 @@ module Api
         before_action :set_menu_item, only: [:show, :update, :destroy, :upload_images, :delete_image]
 
         def index
-          menu_items = MenuItem.ordered.includes(:category).with_attached_images
+          # Sort theo product_code (mã hàng) mặc định
+          menu_items = MenuItem.includes(:category).with_attached_images
           
           if params[:category_id].present?
             menu_items = menu_items.where(category_id: params[:category_id])
           end
+
+          # Sort theo product_code, nếu không có thì sort theo id
+          menu_items = menu_items.order(
+            Arel.sql("CASE WHEN product_code IS NULL OR product_code = '' THEN 1 ELSE 0 END"),
+            :product_code,
+            :id
+          )
 
           render json: menu_items.map { |item| menu_item_json(item) }
         end
@@ -106,15 +114,35 @@ module Api
           workbook = package.workbook
           workbook.add_worksheet(name: "Món ăn") do |sheet|
             # Header - đúng thứ tự và tên cột
-            sheet.add_row ["Mã hàng", "Tên hàng", "Đơn vị tính", "Giá bán", "GHI CHÚ"]
+            sheet.add_row ["Mã hàng", "Tên hàng", "Danh mục", "Đơn vị tính", "Giá bán", "GHI CHÚ"]
             
-            # Data
-            MenuItem.includes(:category).ordered.each do |item|
+            # Data - Sort theo category position trước, sau đó theo product_code
+            menu_items = MenuItem.includes(:category)
+                                 .joins(:category)
+                                 .order('categories.position ASC, categories.id ASC')
+                                 .order(
+                                   Arel.sql("CASE WHEN menu_items.product_code IS NULL OR menu_items.product_code = '' THEN 1 ELSE 0 END"),
+                                   'menu_items.product_code',
+                                   'menu_items.id'
+                                 )
+            
+            menu_items.each do |item|
+              # Format giá dưới dạng text để Excel không tự format
+              price_value = if item.is_market_price
+                'Thời giá'
+              elsif item.price
+                # Xuất giá dưới dạng số nguyên (không có dấu chấm thập phân) để tránh Excel format
+                item.price.to_i.to_s
+              else
+                '0'
+              end
+              
               sheet.add_row [
                 item.product_code || '',
                 item.name || '',
-                item.unit || '',
-                item.is_market_price ? 'Thời giá' : (item.price || 0),
+                item.category&.name || '',
+                item.unit.presence || 'Phần', # Default là Phần nếu không có
+                price_value,
                 '' # Ghi chú để trống
               ]
             end
@@ -140,7 +168,13 @@ module Api
             sheet = spreadsheet.sheet(0)
             
             updated_count = 0
+            created_count = 0
+            deleted_count = 0
             errors = []
+            
+            # Bước 1: Thu thập tất cả mã sản phẩm từ file import
+            imported_product_codes = []
+            items_to_process = []
             
             # Skip header row (row 1)
             (2..sheet.last_row).each do |row|
@@ -148,41 +182,178 @@ module Api
               
               product_code = sheet.cell(row, 1).to_s.strip
               name = sheet.cell(row, 2).to_s.strip
-              unit = sheet.cell(row, 3).to_s.strip
-              price_str = sheet.cell(row, 4).to_s.strip
-              description = sheet.cell(row, 5).to_s.strip
+              category_name = sheet.cell(row, 3).to_s.strip
+              unit = sheet.cell(row, 4).to_s.strip
+              price_cell = sheet.cell(row, 5)
+              # Lấy giá trị raw từ cell để xử lý đúng
+              price_str = price_cell.nil? ? '' : price_cell.to_s.strip
+              description = sheet.cell(row, 6).to_s.strip
               
               next if name.blank? # Skip if no name
               
-              # Find menu item by product_code or name
-              menu_item = if product_code.present?
-                MenuItem.find_by(product_code: product_code) || MenuItem.find_by(name: name)
-              else
-                MenuItem.find_by(name: name)
+              if product_code.blank?
+                errors << "Dòng #{row}: Mã hàng không được để trống"
+                next
               end
               
-              if menu_item
-                # Update existing item
-                is_market_price = price_str.downcase.include?('thời giá') || price_str.downcase.include?('thoi gia')
-                price = is_market_price ? 0 : (price_str.gsub(/[^\d]/, '').to_f)
+              imported_product_codes << product_code
+              items_to_process << {
+                row: row,
+                product_code: product_code,
+                name: name,
+                category_name: category_name,
+                unit: unit,
+                price_cell: price_cell,  # Lưu raw cell value
+                price_str: price_str,
+                description: description
+              }
+            end
+            
+            # Bước 2: Xóa các sản phẩm không có trong file import
+            existing_items = MenuItem.where.not(product_code: [nil, ''])
+            items_to_delete = existing_items.where.not(product_code: imported_product_codes)
+            deleted_count = items_to_delete.count
+            items_to_delete.destroy_all
+            
+            # Bước 3: Xử lý từng dòng trong file import
+            items_to_process.each do |item_data|
+              row = item_data[:row]
+              product_code = item_data[:product_code]
+              name = item_data[:name]
+              category_name = item_data[:category_name]
+              unit = item_data[:unit]
+              price_cell = item_data[:price_cell]  # Lấy raw cell value
+              price_str = item_data[:price_str]
+              description = item_data[:description]
+              
+              # Tìm hoặc tạo category
+              category = nil
+              if category_name.present?
+                # Tìm category: thử exact match trước, sau đó thử trim và case-insensitive
+                category = Category.find_by(name: category_name) || 
+                          Category.find_by(name: category_name.strip) ||
+                          Category.where("TRIM(name) = ?", category_name.strip).first ||
+                          Category.where("LOWER(TRIM(name)) = ?", category_name.strip.downcase).first
                 
-                menu_item.update(
-                  product_code: product_code.presence || menu_item.product_code,
-                  name: name,
-                  unit: unit.presence || menu_item.unit,
-                  price: price,
-                  description: description.presence || menu_item.description,
-                  is_market_price: is_market_price
-                )
-                updated_count += 1
+                if category.nil?
+                  errors << "Dòng #{row}: Không tìm thấy danh mục '#{category_name}'. Món ăn sẽ được thêm vào danh mục đầu tiên."
+                  category = Category.first
+                end
+              end
+              
+              if category.nil?
+                category = Category.first
+                if category.nil?
+                  errors << "Dòng #{row}: Không có danh mục nào trong hệ thống. Vui lòng tạo danh mục trước."
+                  next
+                end
+              end
+              
+              # Validate unit enum
+              valid_units = ['Phần', 'Kg', 'Lạng', 'Nguyên Con']
+              unit_value = unit.presence
+              if unit_value && !valid_units.include?(unit_value)
+                errors << "Dòng #{row}: Đơn vị tính '#{unit_value}' không hợp lệ. Chỉ chấp nhận: #{valid_units.join(', ')}. Sử dụng 'Phần' làm mặc định."
+                unit_value = 'Phần'
+              end
+              unit_value ||= 'Phần'
+              
+              # Xử lý giá: Excel có thể trả về số hoặc text
+              # Kiểm tra giá trị raw từ cell trước
+              is_market_price = false
+              price = 0
+              
+              if price_cell.nil? || price_cell.to_s.strip.blank?
+                price = 0
               else
-                errors << "Dòng #{row}: Không tìm thấy món ăn với mã '#{product_code}' hoặc tên '#{name}'"
+                # Luôn convert sang string trước để xử lý thống nhất
+                price_str_normalized = price_cell.to_s.strip
+                is_market_price = price_str_normalized.downcase.include?('thời giá') || 
+                                 price_str_normalized.downcase.include?('thoi gia')
+                
+                if is_market_price
+                  price = 0
+                else
+                  # Nếu là số từ Excel (Numeric), convert sang string rồi parse
+                  if price_cell.is_a?(Numeric)
+                    # Excel có thể trả về số với format khác, convert sang string rồi parse lại
+                    price_str_from_number = price_cell.to_s
+                    # Loại bỏ dấu chấm thập phân nếu có (VD: 150000.0 -> 150000)
+                    if price_str_from_number.include?('.')
+                      # Kiểm tra xem có phải là số thập phân thật không (VD: 150.5) hay chỉ là format (150000.0)
+                      parts = price_str_from_number.split('.')
+                      if parts.length == 2 && parts[1].to_i == 0
+                        # Chỉ là format, không phải số thập phân
+                        price = parts[0].to_i
+                      else
+                        # Là số thập phân thật, giữ nguyên
+                        price = price_cell.to_f
+                      end
+                    else
+                      price = price_cell.to_i
+                    end
+                  else
+                    # Parse từ string: loại bỏ tất cả ký tự không phải số
+                    # Xử lý cả trường hợp có dấu phẩy/chấm phân cách hàng nghìn (VD: 150.000, 1.500.000)
+                    cleaned_price = price_str_normalized.gsub(/[^\d]/, '')
+                    if cleaned_price.blank?
+                      price = 0
+                    else
+                      # Chuyển thành số nguyên để tránh vấn đề float
+                      price = cleaned_price.to_i
+                    end
+                  end
+                end
+              end
+              
+              # Tìm menu item theo product_code (bắt buộc phải có mã hàng)
+              if product_code.blank?
+                errors << "Dòng #{row}: Mã hàng không được để trống. Bỏ qua dòng này."
+                next
+              end
+              
+              begin
+                # Tìm menu item theo product_code (chỉ tìm theo mã, không tìm theo tên)
+                menu_item = MenuItem.find_by(product_code: product_code)
+                
+                if menu_item
+                  # Trường hợp 2: Món ăn đã tồn tại -> ghi đè tất cả thông tin từ file
+                  menu_item.update!(
+                    product_code: product_code,
+                    name: name,
+                    category_id: category.id,
+                    unit: unit_value,
+                    price: price,
+                    description: description.presence || '',
+                    is_market_price: is_market_price
+                  )
+                  updated_count += 1
+                else
+                  # Trường hợp 1: Món ăn chưa tồn tại -> tạo mới
+                  max_position = MenuItem.where(category_id: category.id).maximum(:position).to_i + 1
+                  MenuItem.create!(
+                    product_code: product_code,
+                    name: name,
+                    category_id: category.id,
+                    unit: unit_value,
+                    price: price,
+                    description: description.presence || '',
+                    is_market_price: is_market_price,
+                    active: true,
+                    position: max_position
+                  )
+                  created_count += 1
+                end
+              rescue => e
+                errors << "Dòng #{row}: Lỗi khi xử lý món ăn '#{name}' (mã: #{product_code}): #{e.message}"
               end
             end
             
             render json: { 
-              message: "Import thành công. Đã cập nhật #{updated_count} món ăn.",
+              message: "Import thành công. Đã tạo mới #{created_count} món, cập nhật #{updated_count} món, xóa #{deleted_count} món.",
+              created_count: created_count,
               updated_count: updated_count,
+              deleted_count: deleted_count,
               errors: errors
             }
           rescue => e

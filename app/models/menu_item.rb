@@ -7,6 +7,14 @@ class MenuItem < ApplicationRecord
   # Active Storage - cho phép nhiều ảnh
   has_many_attached :images
 
+  # Enum cho unit
+  enum unit: {
+    'Phần' => 0,
+    'Kg' => 1,
+    'Lạng' => 2,
+    'Nguyên Con' => 3
+  }, _default: 'Phần'
+
   validates :name, presence: true
   validates :price, presence: true, numericality: { greater_than_or_equal_to: 0 }
 
@@ -37,6 +45,7 @@ class MenuItem < ApplicationRecord
 
   def set_defaults
     self.active = true if active.nil?
+    self.unit = 'Phần' if unit.nil?
     self.position ||= MenuItem.where(category_id: category_id).maximum(:position).to_i + 1
   end
 end
