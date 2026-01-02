@@ -7,6 +7,7 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
+      get 'menu_images/index'
       # Auth
       post 'auth/login', to: 'auth#login'
       get 'auth/me', to: 'auth#me'
@@ -21,6 +22,7 @@ Rails.application.routes.draw do
       resources :daily_specials, only: [:index, :show]
       resources :contacts, only: [:create]
       resources :rooms, only: [:index, :show]
+      resources :menu_images, only: [:index]
       resources :bookings, only: [:create] do
         collection do
           get :check_availability
@@ -34,6 +36,9 @@ Rails.application.routes.draw do
 
       # Admin APIs
       namespace :admin do
+        get 'menu_images/index'
+        get 'menu_images/create'
+        get 'menu_images/destroy'
         # File uploads
         resources :uploads, only: [:create, :destroy]
 
@@ -110,6 +115,12 @@ Rails.application.routes.draw do
             get :upcoming
             get :stats
             get :dashboard
+          end
+        end
+
+        resources :menu_images do
+          collection do
+            post :reorder
           end
         end
       end
