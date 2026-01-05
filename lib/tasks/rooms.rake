@@ -10,7 +10,8 @@ namespace :rooms do
     
     Room.find_each do |room|
       begin
-        room.images.attached?.each do |image|
+        next unless room.images.attached?
+        room.images.each do |image|
           begin
             # Generate thumb variant (400x300, JPEG format for smaller size)
             thumb_variant = image.variant({ resize_to_limit: [400, 300], format: :jpeg })
