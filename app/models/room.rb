@@ -37,12 +37,12 @@ class Room < ApplicationRecord
     end
   end
 
-  # Helper method to get optimized/resized images URLs for faster loading
+  # Helper method to get optimized/resized images URLs for faster loading (800x600, optimized)
   def images_urls_medium
     if images.attached?
       images.map { |img| 
         begin
-          variant_url(img, resize_to_limit: [800, 600]) || rails_storage_proxy_url(img)
+          variant_url(img, { resize_to_limit: [800, 600], format: :jpeg }) || rails_storage_proxy_url(img)
         rescue => e
           Rails.logger.error "Error in images_urls_medium for image #{img.id}: #{e.message}"
           rails_storage_proxy_url(img)
@@ -53,12 +53,12 @@ class Room < ApplicationRecord
     end
   end
 
-  # Helper method to get small thumbnail URLs
+  # Helper method to get small thumbnail URLs (400x300, optimized for fast loading)
   def images_urls_thumb
     if images.attached?
       images.map { |img| 
         begin
-          variant_url(img, resize_to_limit: [400, 300]) || rails_storage_proxy_url(img)
+          variant_url(img, { resize_to_limit: [400, 300], format: :jpeg }) || rails_storage_proxy_url(img)
         rescue => e
           Rails.logger.error "Error in images_urls_thumb for image #{img.id}: #{e.message}"
           rails_storage_proxy_url(img)
@@ -78,11 +78,11 @@ class Room < ApplicationRecord
     end
   end
 
-  # Helper method to get optimized thumbnail URL
+  # Helper method to get optimized thumbnail URL (800x600)
   def thumbnail_url_medium
     if images.attached?
       begin
-        variant_url(images.first, resize_to_limit: [800, 600]) || thumbnail_url
+        variant_url(images.first, { resize_to_limit: [800, 600], format: :jpeg }) || thumbnail_url
       rescue => e
         Rails.logger.error "Error in thumbnail_url_medium: #{e.message}"
         thumbnail_url
@@ -92,11 +92,11 @@ class Room < ApplicationRecord
     end
   end
 
-  # Helper method to get small thumbnail URL
+  # Helper method to get small thumbnail URL (400x300, optimized for fast loading)
   def thumbnail_url_thumb
     if images.attached?
       begin
-        variant_url(images.first, resize_to_limit: [400, 300]) || thumbnail_url
+        variant_url(images.first, { resize_to_limit: [400, 300], format: :jpeg }) || thumbnail_url
       rescue => e
         Rails.logger.error "Error in thumbnail_url_thumb: #{e.message}"
         thumbnail_url
