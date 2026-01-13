@@ -25,12 +25,14 @@ module Api
         json['unit'] = item.unit
         
         # Trả về mảng images_urls
-        json['images_urls'] = item.images.attached? ? 
-          item.images.map { |img| rails_blob_url(img, only_path: true) } : []
+        json['images_urls'] = item.images_urls || []
+        json['images_urls_medium'] = item.images_urls_medium || []
+        json['images_urls_thumb'] = item.images_urls_thumb || []
         
         # Thumbnail (ảnh đầu tiên hoặc fallback)
-        json['thumbnail_url'] = item.images.attached? ? 
-          rails_blob_url(item.images.first, only_path: true) : item.image_url
+        json['thumbnail_url'] = item.thumbnail_url || item.image_url
+        json['thumbnail_url_medium'] = item.thumbnail_url_medium || item.thumbnail_url || item.image_url
+        json['thumbnail_url_thumb'] = item.thumbnail_url_thumb || item.thumbnail_url || item.image_url
         
         json
       end
