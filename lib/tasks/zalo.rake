@@ -72,5 +72,35 @@ namespace :zalo do
       puts "❌ Failed to send message. Check logs for details."
     end
   end
+
+  desc "Auto refresh token (for cron job)"
+  task auto_refresh: :environment do
+    token = ZaloToken.first
+    
+    if token.nil?
+      Rails.logger.error "[ZALO] No token found for auto refresh"
+      puts "❌ No token found"
+      exit 1
+    end
+
+    # Only refresh if token is expired or will expire in next 10 minutes
+    if token.access_token_expired? || token.access_token_expires_at <= 10.minutes.from_now
+      Rails.logger.info "[ZALO] Auto-refreshing token (expires at: #{token.access_token_expires_at})"
+      result = ZaloService.refresh_access_token(token)
+      
+      if result
+        token.reload
+        Rails.logger.info "[ZALO] Auto-refresh successful, new expiry: #{token.access_token_expires_at}"
+        puts "✅ Token auto-refreshed successfully! New expiry: #{token.access_token_expires_at}"
+      else
+        Rails.logger.error "[ZALO] Auto-refresh failed"
+        puts "❌ Auto-refresh failed. Check logs for details."
+        exit 1
+      end
+    else
+      Rails.logger.info "[ZALO] Token still valid, no refresh needed (expires at: #{token.access_token_expires_at})"
+      puts "✅ Token still valid, no refresh needed (expires at: #{token.access_token_expires_at})"
+    end
+  end
 end
 
