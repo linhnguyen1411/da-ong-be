@@ -20,8 +20,8 @@ module Chatbot
       canned = match_db_faq || match_canned
       return canned if canned.present?
 
-      if OpenAiService.enabled?
-        return respond_openai
+      if AiProvider.enabled?
+        return respond_ai
       end
 
       fallback('Dạ anh/chị cho em xin **ngày + giờ + số người** để em hỗ trợ nhanh nhất ạ.')
@@ -118,20 +118,28 @@ module Chatbot
       }
     end
 
-    def respond_openai
-      system = <<~SYS
-        Bạn là trợ lý tư vấn cho nhà hàng Đá & Ong.
-        Quy tắc:
-        - Trả lời ngắn gọn, lịch sự, tiếng Việt.
-        - Nếu khách hỏi đặt bàn/đặt phòng: luôn hỏi lại các thông tin thiếu: SĐT, ngày, giờ, số người, phòng riêng/ngoài trời.
-        - Không bịa thông tin. Nếu không chắc, hỏi lại.
-      SYS
+    def respond_ai
+      company = @context['company_name'].to_s.strip.presence
+      provided_system = @context['system_instruction'].to_s
+
+      # Guardrail: limit prompt size from client
+      if provided_system.present? && provided_system.length <= 4000
+        system = provided_system
+      else
+        system = <<~SYS
+          Bạn là trợ lý tư vấn cho nhà hàng #{company || 'Đá & Ong'}.
+          Quy tắc:
+          - Trả lời ngắn gọn, lịch sự, tiếng Việt.
+          - Nếu khách hỏi đặt bàn/đặt phòng: luôn hỏi lại các thông tin thiếu: SĐT, ngày, giờ, số người, phòng riêng/ngoài trời.
+          - Không bịa thông tin. Nếu không chắc, hỏi lại.
+        SYS
+      end
 
       user = @message
-      content = OpenAiService.chat(system: system, user: user)
+      content = AiProvider.chat(system: system, user: user)
       content = content.presence || 'Dạ anh/chị cho em xin **ngày + giờ + số người** để em hỗ trợ nhanh nhất ạ.'
 
-      { intent: 'openai', reply: content }
+      { intent: AiProvider.provider_name, reply: content }
     rescue StandardError
       fallback('Dạ hiện em chưa xử lý được câu hỏi này. Anh/chị cho em xin **ngày + giờ + số người** để em hỗ trợ ạ.')
     end
