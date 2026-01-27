@@ -8,7 +8,7 @@ class GeminiService
 
   def self.model
     # Use a model name compatible with v1beta generateContent by default
-    ENV['GEMINI_MODEL'].presence || 'gemini-1.5-flash-latest'
+    ENV['GEMINI_MODEL'].presence || 'gemini-2.0-flash'
   end
 
   # Basic non-streaming generateContent call.
@@ -16,7 +16,8 @@ class GeminiService
   def self.chat(system:, user:, temperature: 0.4)
     raise 'GEMINI_API_KEY missing' unless enabled?
 
-    uri = URI("https://generativelanguage.googleapis.com/v1beta/models/#{model}:generateContent")
+    m = model.to_s.sub(%r{\Amodels/}i, '')
+    uri = URI("https://generativelanguage.googleapis.com/v1beta/models/#{m}:generateContent")
     uri.query = "key=#{ENV['GEMINI_API_KEY']}"
 
     payload = {
