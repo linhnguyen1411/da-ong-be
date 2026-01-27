@@ -146,7 +146,7 @@ module Chatbot
 
       { intent: AiProvider.provider_name, reply: content }
     rescue StandardError
-      fallback('Dạ hiện em chưa xử lý được câu hỏi này. Anh/chị cho em xin **ngày + giờ + số người** để em hỗ trợ ạ.')
+      fallback('Dạ hệ thống đang bận, anh/chị thử lại giúp em sau ít phút ạ.')
     end
 
     def fallback(text)

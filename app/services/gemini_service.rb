@@ -7,7 +7,8 @@ class GeminiService
   end
 
   def self.model
-    ENV['GEMINI_MODEL'].presence || 'gemini-1.5-flash'
+    # Use a model name compatible with v1beta generateContent by default
+    ENV['GEMINI_MODEL'].presence || 'gemini-1.5-flash-latest'
   end
 
   # Basic non-streaming generateContent call.
