@@ -24,8 +24,9 @@ Rails.application.routes.draw do
       resources :best_sellers, only: [:index, :show]
       resources :daily_specials, only: [:index, :show]
       resources :contacts, only: [:create]
-      resources :rooms, only: [:index, :show]
+      # IMPORTANT: define before `resources :rooms` to avoid being captured by rooms#show (id=available)
       get 'rooms/available', to: 'rooms_availability#index'
+      resources :rooms, only: [:index, :show]
       resources :menu_images, only: [:index]
       post 'chat/respond', to: 'chatbot#respond'
       resources :bookings, only: [:create] do
