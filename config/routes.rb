@@ -25,7 +25,9 @@ Rails.application.routes.draw do
       resources :daily_specials, only: [:index, :show]
       resources :contacts, only: [:create]
       resources :rooms, only: [:index, :show]
+      get 'rooms/available', to: 'rooms_availability#index'
       resources :menu_images, only: [:index]
+      post 'chat/respond', to: 'chatbot#respond'
       resources :bookings, only: [:create] do
         collection do
           get :check_availability
@@ -131,6 +133,8 @@ Rails.application.routes.draw do
             patch 'visits/:visit_id', to: 'customers#update_visit'
           end
         end
+
+        resources :chatbot_faqs
 
         resources :menu_images do
           collection do

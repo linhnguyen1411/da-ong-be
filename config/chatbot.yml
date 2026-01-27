@@ -1,0 +1,30 @@
+vi:
+  canned:
+    - id: hours
+      patterns:
+        - "(gi[oờ]|mở cửa|đóng cửa|hoạt động|giờ bán)"
+      answer: |
+        Nhà hàng Đá & Ong phục vụ hằng ngày. Anh/chị cho em xin **ngày** và **giờ** dự kiến đến để em kiểm tra phòng/bàn trống nhé.
+
+    - id: address
+      patterns:
+        - "(địa chỉ|ở đâu|chỉ đường|google map|map)"
+      answer: |
+        Anh/chị cho em xin khu vực anh/chị đang ở (quận/phường) để em gửi hướng dẫn phù hợp. Nếu anh/chị đặt bàn luôn, cho em xin **SĐT + ngày + giờ + số người** nhé.
+
+    - id: booking_help
+      patterns:
+        - "(đặt bàn|đặt phòng|đặt chỗ|booking|giữ chỗ)"
+      answer: |
+        Dạ được ạ. Anh/chị cho em xin **SĐT + ngày + giờ + số người** (và muốn **phòng riêng/ngoài trời** nếu có) để em kiểm tra trống và hỗ trợ đặt ạ.
+
+    - id: menu_help
+      patterns:
+        - "(menu|thực đơn|món gì|giá|best seller|món ngon)"
+      answer: |
+        Dạ bên em có nhiều món và có cả món thời giá. Anh/chị cho em biết mình thích **hải sản / lẩu / món nhậu / set tiệc** và khoảng **ngân sách** để em gợi ý nhanh ạ.
+
+  room_intent:
+    patterns:
+      - "(còn phòng|phòng trống|trống phòng|còn bàn|bàn trống|còn chỗ|check phòng)"
+
