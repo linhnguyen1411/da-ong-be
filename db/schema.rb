@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_01_02_054305) do
+ActiveRecord::Schema[7.1].define(version: 2026_01_27_094000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -91,6 +91,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_02_054305) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "cancelled_at"
+    t.bigint "customer_id"
+    t.index ["customer_id"], name: "index_bookings_on_customer_id"
     t.index ["room_id"], name: "index_bookings_on_room_id"
   end
 
@@ -115,6 +117,41 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_02_054305) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "customer_visits", force: :cascade do |t|
+    t.bigint "customer_id", null: false
+    t.bigint "booking_id"
+    t.bigint "admin_id"
+    t.string "source", default: "manual", null: false
+    t.datetime "occurred_at", null: false
+    t.text "note"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "amount_vnd"
+    t.index ["admin_id"], name: "index_customer_visits_on_admin_id"
+    t.index ["amount_vnd"], name: "index_customer_visits_on_amount_vnd"
+    t.index ["booking_id"], name: "index_customer_visits_on_booking_id", unique: true
+    t.index ["customer_id", "occurred_at"], name: "index_customer_visits_on_customer_id_and_occurred_at"
+    t.index ["customer_id"], name: "index_customer_visits_on_customer_id"
+    t.index ["occurred_at"], name: "index_customer_visits_on_occurred_at"
+  end
+
+  create_table "customers", force: :cascade do |t|
+    t.string "name"
+    t.string "phone", null: false
+    t.string "email"
+    t.text "notes"
+    t.boolean "active", default: true, null: false
+    t.integer "points_balance", default: 0, null: false
+    t.integer "total_visits", default: 0, null: false
+    t.integer "total_spent_vnd", default: 0, null: false
+    t.datetime "last_visit_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_customers_on_active"
+    t.index ["last_visit_at"], name: "index_customers_on_last_visit_at"
+    t.index ["phone"], name: "index_customers_on_phone", unique: true
+  end
+
   create_table "daily_specials", force: :cascade do |t|
     t.bigint "menu_item_id", null: false
     t.string "title"
@@ -127,6 +164,30 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_02_054305) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["menu_item_id"], name: "index_daily_specials_on_menu_item_id"
+  end
+
+  create_table "loyalty_transactions", force: :cascade do |t|
+    t.bigint "customer_id", null: false
+    t.bigint "booking_id"
+    t.bigint "admin_id"
+    t.string "kind", null: false
+    t.integer "points", null: false
+    t.integer "amount_vnd"
+    t.string "reference"
+    t.text "note"
+    t.datetime "occurred_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "balance_before"
+    t.integer "balance_after"
+    t.index ["admin_id"], name: "index_loyalty_transactions_on_admin_id"
+    t.index ["balance_after"], name: "index_loyalty_transactions_on_balance_after"
+    t.index ["booking_id", "kind"], name: "index_loyalty_transactions_on_booking_id_and_kind", unique: true
+    t.index ["booking_id"], name: "index_loyalty_transactions_on_booking_id"
+    t.index ["customer_id", "occurred_at"], name: "index_loyalty_transactions_on_customer_id_and_occurred_at"
+    t.index ["customer_id"], name: "index_loyalty_transactions_on_customer_id"
+    t.index ["kind"], name: "index_loyalty_transactions_on_kind"
+    t.index ["occurred_at"], name: "index_loyalty_transactions_on_occurred_at"
   end
 
   create_table "menu_images", force: :cascade do |t|
@@ -211,8 +272,15 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_02_054305) do
   add_foreign_key "best_sellers", "menu_items"
   add_foreign_key "booking_items", "bookings"
   add_foreign_key "booking_items", "menu_items"
+  add_foreign_key "bookings", "customers"
   add_foreign_key "bookings", "rooms"
+  add_foreign_key "customer_visits", "admins"
+  add_foreign_key "customer_visits", "bookings"
+  add_foreign_key "customer_visits", "customers"
   add_foreign_key "daily_specials", "menu_items"
+  add_foreign_key "loyalty_transactions", "admins"
+  add_foreign_key "loyalty_transactions", "bookings"
+  add_foreign_key "loyalty_transactions", "customers"
   add_foreign_key "menu_items", "categories"
   add_foreign_key "room_images", "rooms"
   add_foreign_key "room_schedules", "bookings"

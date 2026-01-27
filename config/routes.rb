@@ -121,6 +121,17 @@ Rails.application.routes.draw do
           end
         end
 
+        resources :customers do
+          collection do
+            get :lookup
+          end
+          member do
+            post :adjust_points
+            post :record_visit
+            patch 'visits/:visit_id', to: 'customers#update_visit'
+          end
+        end
+
         resources :menu_images do
           collection do
             post :reorder

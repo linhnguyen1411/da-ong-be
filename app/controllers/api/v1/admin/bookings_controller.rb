@@ -77,6 +77,7 @@ module Api
 
         def complete
           @booking.complete!
+          Loyalty::AccrueForBooking.call(@booking, admin: current_admin)
           render json: @booking
         end
 

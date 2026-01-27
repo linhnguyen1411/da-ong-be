@@ -1,5 +1,6 @@
 class Booking < ApplicationRecord
   belongs_to :room, optional: true
+  belongs_to :customer, optional: true
   has_many :booking_items, dependent: :destroy
   has_many :menu_items, through: :booking_items
   has_one :room_schedule, dependent: :destroy
@@ -11,6 +12,7 @@ class Booking < ApplicationRecord
   validates :status, presence: true, inclusion: { in: %w[pending confirmed cancelled completed] }
 
   before_validation :set_defaults, on: :create
+  before_validation :ensure_customer_from_phone, if: -> { customer_phone.present? && (new_record? || will_save_change_to_customer_phone?) }
 
   scope :pending, -> { where(status: 'pending') }
   scope :confirmed, -> { where(status: 'confirmed') }
@@ -75,5 +77,23 @@ class Booking < ApplicationRecord
   def set_defaults
     self.status ||= 'pending'
     self.duration_hours ||= 2
+  end
+
+  # Auto-sync booking customer info with loyalty "Customer" record.
+  # - Uses customer_phone to find/create Customer.
+  # - Links booking.customer_id for reporting and future loyalty actions.
+  def ensure_customer_from_phone
+    normalized_phone = customer_phone.to_s.strip.gsub(/\s+/, '')
+    return if normalized_phone.blank?
+
+    # Normalize stored booking phone for consistent matching
+    self.customer_phone = normalized_phone
+
+    customer = Customer.find_or_initialize_by(phone: normalized_phone)
+    customer.name = customer_name if customer.name.blank? && customer_name.present?
+    customer.email = customer_email if customer.email.blank? && customer_email.present?
+    customer.save! if customer.new_record? || customer.changed?
+
+    self.customer = customer
   end
 end
