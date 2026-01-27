@@ -28,7 +28,7 @@ module Chatbot
       company = @context['company_name'].to_s.strip.presence
       {
         intent: 'ai_unavailable',
-        reply: "Dạ em chưa có câu trả lời sẵn cho câu hỏi này (#{company || 'nhà hàng'}). Admin vui lòng thêm FAQ trong mục **Chatbot** hoặc cấu hình AI để em trả lời tự động ạ."
+        reply: "Dạ em chưa hiểu rõ câu hỏi này ạ. Anh/chị có thể nói rõ hơn (vd: **ngày/giờ/số người** nếu muốn check phòng trống) để em hỗ trợ tốt hơn nhé."
       }
     end
 
