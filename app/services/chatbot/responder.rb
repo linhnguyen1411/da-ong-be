@@ -17,14 +17,19 @@ module Chatbot
         return respond_room_availability
       end
 
-      canned = match_db_faq || match_canned
-      return canned if canned.present?
+      faq = match_db_faq
+      return faq if faq.present?
 
+      # If no FAQ matched, delegate to AI (Gemini/OpenAI) when enabled.
       if AiProvider.enabled?
         return respond_ai
       end
 
-      fallback('Dạ anh/chị cho em xin **ngày + giờ + số người** để em hỗ trợ nhanh nhất ạ.')
+      company = @context['company_name'].to_s.strip.presence
+      {
+        intent: 'ai_unavailable',
+        reply: "Dạ em chưa có câu trả lời sẵn cho câu hỏi này (#{company || 'nhà hàng'}). Admin vui lòng thêm FAQ trong mục **Chatbot** hoặc cấu hình AI để em trả lời tự động ạ."
+      }
     end
 
     private
