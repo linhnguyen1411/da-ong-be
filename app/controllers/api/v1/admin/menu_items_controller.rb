@@ -2,6 +2,7 @@ module Api
   module V1
     module Admin
       class MenuItemsController < BaseController
+        before_action -> { require_roles!('super_admin', 'admin') }
         before_action :set_menu_item, only: [:show, :update, :destroy, :upload_images, :delete_image]
 
         def index

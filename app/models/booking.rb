@@ -4,6 +4,7 @@ class Booking < ApplicationRecord
   has_many :booking_items, dependent: :destroy
   has_many :menu_items, through: :booking_items
   has_one :room_schedule, dependent: :destroy
+  has_many :booking_action_logs, dependent: :destroy
 
   validates :customer_phone, presence: true
   validates :party_size, presence: true, numericality: { greater_than: 0 }

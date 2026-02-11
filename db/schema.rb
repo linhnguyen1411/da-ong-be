@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_01_27_095500) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_11_090100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -49,6 +49,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_27_095500) do
     t.string "role"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "active", default: true, null: false
+    t.index ["active"], name: "index_admins_on_active"
   end
 
   create_table "best_sellers", force: :cascade do |t|
@@ -63,6 +65,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_27_095500) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["menu_item_id"], name: "index_best_sellers_on_menu_item_id"
+  end
+
+  create_table "booking_action_logs", force: :cascade do |t|
+    t.bigint "booking_id", null: false
+    t.bigint "admin_id", null: false
+    t.string "action", null: false
+    t.jsonb "changeset", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["admin_id"], name: "index_booking_action_logs_on_admin_id"
+    t.index ["booking_id", "created_at"], name: "index_booking_action_logs_on_booking_id_and_created_at"
+    t.index ["booking_id"], name: "index_booking_action_logs_on_booking_id"
   end
 
   create_table "booking_items", force: :cascade do |t|
@@ -284,6 +298,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_27_095500) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "best_sellers", "menu_items"
+  add_foreign_key "booking_action_logs", "admins"
+  add_foreign_key "booking_action_logs", "bookings"
   add_foreign_key "booking_items", "bookings"
   add_foreign_key "booking_items", "menu_items"
   add_foreign_key "bookings", "customers"

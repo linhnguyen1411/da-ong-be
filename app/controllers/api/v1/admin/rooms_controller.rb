@@ -2,6 +2,7 @@ module Api
   module V1
     module Admin
       class RoomsController < BaseController
+        before_action -> { require_roles!('super_admin', 'admin') }
         before_action :set_room, only: [:show, :update, :destroy, :update_status, :upload_images, :delete_image]
 
         def index

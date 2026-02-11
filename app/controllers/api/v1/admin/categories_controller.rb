@@ -2,6 +2,7 @@ module Api
   module V1
     module Admin
       class CategoriesController < BaseController
+        before_action -> { require_roles!('super_admin', 'admin') }
         before_action :set_category, only: [:show, :update, :destroy]
 
         def index

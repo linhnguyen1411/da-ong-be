@@ -4,7 +4,7 @@ module Api
       def login
         admin = ::Admin.find_by(email: params[:email])
 
-        if admin&.authenticate(params[:password])
+        if admin&.active? && admin&.authenticate(params[:password])
           token = JsonWebToken.encode(admin_id: admin.id)
           render json: {
             token: token,

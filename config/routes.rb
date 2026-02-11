@@ -110,7 +110,7 @@ Rails.application.routes.draw do
           end
         end
 
-        resources :bookings, only: [:index, :show, :update, :destroy] do
+        resources :bookings, only: [:index, :show, :create, :update, :destroy] do
           member do
             patch :confirm
             patch :cancel
@@ -142,6 +142,8 @@ Rails.application.routes.draw do
             post :reorder
           end
         end
+
+        resources :admins
       end
     end
   end

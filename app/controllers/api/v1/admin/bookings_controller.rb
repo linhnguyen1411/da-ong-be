@@ -2,6 +2,7 @@ module Api
   module V1
     module Admin
       class BookingsController < BaseController
+        before_action -> { require_roles!('super_admin', 'admin', 'manager', 'receptionist') }
         before_action :set_booking, only: [:show, :update, :destroy, :confirm, :cancel, :complete]
 
         def index
@@ -37,7 +38,11 @@ module Api
           booking_json = @booking.as_json(
             include: { 
               room: { only: [:id, :name, :capacity] },
-              booking_items: { include: :menu_item }
+              booking_items: { include: :menu_item },
+              booking_action_logs: {
+                only: [:id, :action, :changeset, :created_at],
+                include: { admin: { only: [:id, :email, :name, :role] } }
+              }
             },
             methods: [:total_amount, :formatted_booking_time]
           )
@@ -46,8 +51,38 @@ module Api
           render json: booking_json
         end
 
+        def create
+          booking = Booking.new(booking_params)
+
+          if booking.save
+            BookingActionLog.create!(
+              booking: booking,
+              admin: current_admin,
+              action: 'create',
+              changeset: { attributes: booking.attributes }
+            )
+
+            booking_json = booking.as_json(
+              include: { booking_items: { include: :menu_item } },
+              methods: [:formatted_booking_time]
+            )
+            booking_json['booking_time'] = booking_json['formatted_booking_time'] || booking_json['booking_time']
+            booking_json.delete('formatted_booking_time')
+            render json: booking_json, status: :created
+          else
+            render json: { errors: booking.errors.full_messages }, status: :unprocessable_entity
+          end
+        end
+
         def update
           if @booking.update(booking_params)
+            BookingActionLog.create!(
+              booking: @booking,
+              admin: current_admin,
+              action: 'update',
+              changeset: @booking.saved_changes.except('updated_at')
+            )
+
             booking_json = @booking.as_json(
               include: { booking_items: { include: :menu_item } },
               methods: [:formatted_booking_time]
@@ -61,23 +96,47 @@ module Api
         end
 
         def destroy
+          BookingActionLog.create!(
+            booking: @booking,
+            admin: current_admin,
+            action: 'destroy',
+            changeset: { attributes: @booking.attributes }
+          )
           @booking.destroy
           head :no_content
         end
 
         def confirm
           @booking.confirm!
+          BookingActionLog.create!(
+            booking: @booking,
+            admin: current_admin,
+            action: 'confirm',
+            changeset: @booking.previous_changes.except('updated_at')
+          )
           render json: @booking
         end
 
         def cancel
           @booking.cancel!
+          BookingActionLog.create!(
+            booking: @booking,
+            admin: current_admin,
+            action: 'cancel',
+            changeset: @booking.previous_changes.except('updated_at')
+          )
           render json: @booking
         end
 
         def complete
           @booking.complete!
           Loyalty::AccrueForBooking.call(@booking, admin: current_admin)
+          BookingActionLog.create!(
+            booking: @booking,
+            admin: current_admin,
+            action: 'complete',
+            changeset: @booking.previous_changes.except('updated_at')
+          )
           render json: @booking
         end
 
