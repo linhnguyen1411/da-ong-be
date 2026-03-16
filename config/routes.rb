@@ -28,6 +28,8 @@ Rails.application.routes.draw do
       get 'rooms/available', to: 'rooms_availability#index'
       resources :rooms, only: [:index, :show]
       resources :menu_images, only: [:index]
+      resources :recruitments, only: [:index, :show]
+      resources :promotions, only: [:index, :show]
       post 'chat/respond', to: 'chatbot#respond'
       resources :bookings, only: [:create] do
         collection do
@@ -136,6 +138,9 @@ Rails.application.routes.draw do
         end
 
         resources :chatbot_faqs
+
+        resources :recruitments
+        resources :promotions
 
         resources :menu_images do
           collection do

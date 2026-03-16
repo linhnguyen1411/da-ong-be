@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_11_090100) do
+ActiveRecord::Schema[7.1].define(version: 2026_03_13_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -240,6 +240,34 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_11_090100) do
     t.integer "unit", default: 0, null: false
     t.index ["category_id"], name: "index_menu_items_on_category_id"
     t.index ["product_code"], name: "index_menu_items_on_product_code"
+  end
+
+  create_table "promotions", force: :cascade do |t|
+    t.string "title", null: false
+    t.text "content"
+    t.string "image_url"
+    t.boolean "highlighted", default: false, null: false
+    t.integer "position", default: 0, null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "start_at"
+    t.datetime "end_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_promotions_on_active"
+    t.index ["highlighted"], name: "index_promotions_on_highlighted"
+    t.index ["position"], name: "index_promotions_on_position"
+  end
+
+  create_table "recruitments", force: :cascade do |t|
+    t.string "title", null: false
+    t.text "content"
+    t.string "department"
+    t.integer "position", default: 0, null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_recruitments_on_active"
+    t.index ["position"], name: "index_recruitments_on_position"
   end
 
   create_table "room_images", force: :cascade do |t|
