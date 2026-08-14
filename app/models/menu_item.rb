@@ -1,7 +1,7 @@
 class MenuItem < ApplicationRecord
   belongs_to :category
-  has_many :best_sellers, dependent: :nullify
-  has_many :daily_specials, dependent: :nullify
+  has_many :best_sellers, dependent: :destroy
+  has_many :daily_specials, dependent: :destroy
   has_many :booking_items, dependent: :destroy
 
   # Active Storage - cho phép nhiều ảnh
